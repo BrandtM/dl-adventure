@@ -100,7 +100,7 @@ class DCGAN:
 class GanTrainer:
     def __init__(self):
         self.image_size = 100
-        self.epochs = 100
+        self.epochs = 2000
         self.noise_dim = 100
         self.seed = tf.random.uniform([25, 100])
         self.batch_size = 48
@@ -120,7 +120,7 @@ class GanTrainer:
                                               discriminator_optimizer=self.discriminator_optimizer,
                                               generator=self.generator,
                                               discriminator=self.discriminator)
-        checkpoint_path = os.path.join(os.getcwd(), "checkpoints", "dcgan_100-284")
+        checkpoint_path = os.path.join(os.getcwd(), "checkpoints", "dcgan_100-286")
         self.checkpoint.restore(checkpoint_path)
 
     def create_train_data(self, image_count):
