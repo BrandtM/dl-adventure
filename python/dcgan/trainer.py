@@ -2,7 +2,7 @@ import os
 import cv2
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from tensorflow.keras.preprocessing.image import load_img, img_to_array, ImageDataGenerator
 import time
 from python.dcgan import DCGAN
 
@@ -31,7 +31,25 @@ class GanTrainer:
                                               generator=self.generator,
                                               discriminator=self.discriminator)
         checkpoint_path = os.path.join(os.getcwd(), "checkpoints", "dcgan_100-346")
-        self.generator.save(os.path.join(os.getcwd(), 'yeet', 'yeetus'))
+
+        datagen = ImageDataGenerator(
+            rotation_range=20,
+            width_shift_range=0.4,
+            height_shift_range=0.4,
+            shear_range=0.2,
+            zoom_range=0.2,
+            horizontal_flip=True,
+            fill_mode="nearest"
+        )
+
+        # Remember that images need to reside in another subdirectory under train_data/gan
+        self.image_generator = datagen.flow_from_directory(
+            os.path.join(os.getcwd(), "train_data", "gan"),
+            batch_size=32,
+            class_mode=None,
+            target_size=(self.image_size, self.image_size)
+        )
+
         self.checkpoint.restore(checkpoint_path)
 
     def create_train_data(self, image_count):
@@ -53,28 +71,32 @@ class GanTrainer:
         return tf.reshape(x_train, (image_count - 2, self.image_size, self.image_size, 3))
 
     @tf.function
-    def train_step(self, images):
+    def train_step(self):
         noise = tf.random.uniform([self.batch_size, 100])
 
-        with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
-            generated_images = self.generator(noise, training=True)
+        for _ in range(3):
+            # TODO: Fix this
+            image_batch = yield self.image_generator
 
-            real_output = self.discriminator(images, training=True)
-            fake_output = self.discriminator(generated_images, training=True)
+            with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
+                generated_images = self.generator(noise, training=True)
 
-            gen_loss = DCGAN.generator_loss(fake_output)
-            disc_loss = DCGAN.discriminator_loss(real_output, fake_output)
+                real_output = self.discriminator(image_batch, training=True)
+                fake_output = self.discriminator(generated_images, training=True)
 
-        generator_gradients = gen_tape.gradient(gen_loss, self.generator.trainable_variables)
-        disc_gradients = disc_tape.gradient(disc_loss, self.discriminator.trainable_variables)
+                gen_loss = DCGAN.generator_loss(fake_output)
+                disc_loss = DCGAN.discriminator_loss(real_output, fake_output)
 
-        self.generator_optimizer.apply_gradients(zip(generator_gradients, self.generator.trainable_variables))
-        self.discriminator_optimizer.apply_gradients(zip(disc_gradients, self.discriminator.trainable_variables))
+            generator_gradients = gen_tape.gradient(gen_loss, self.generator.trainable_variables)
+            disc_gradients = disc_tape.gradient(disc_loss, self.discriminator.trainable_variables)
+
+            self.generator_optimizer.apply_gradients(zip(generator_gradients, self.generator.trainable_variables))
+            self.discriminator_optimizer.apply_gradients(zip(disc_gradients, self.discriminator.trainable_variables))
 
     def train(self):
         for epoch in range(self.epochs):
             start = time.time()
-            self.train_step(self.data_set)
+            self.train_step()
             end = time.time() - start
 
             if epoch % 100 == 0:
