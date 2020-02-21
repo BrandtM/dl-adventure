@@ -1,25 +1,24 @@
 import os
-import cv2
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from tensorflow.keras.preprocessing.image import load_img, img_to_array, ImageDataGenerator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import time
 from python.dcgan import DCGAN
 
 
 class GanTrainer:
-    def __init__(self, image_size, epochs, batch_size):
+    def __init__(self, image_size, epochs, batch_size, batch_count):
         self.image_size = image_size
         self.epochs = epochs
         self.noise_dim = 100
         self.seed = tf.random.uniform([25, 100])
         self.batch_size = batch_size
+        self.batch_count = batch_count
         self.data_path = os.path.join(os.getcwd(), "train_data", "gan")
         self.image_count = 48
 
         self.generator = DCGAN.create_generator_model(self.image_size)
         self.discriminator = DCGAN.create_discriminator_model(self.image_size)
-        self.data_set = self.create_train_data(self.image_count)
 
         self.generator_optimizer = tf.keras.optimizers.Adam(1e-4)
         self.discriminator_optimizer = tf.keras.optimizers.Adam(1e-4)
@@ -30,14 +29,14 @@ class GanTrainer:
                                               discriminator_optimizer=self.discriminator_optimizer,
                                               generator=self.generator,
                                               discriminator=self.discriminator)
-        checkpoint_path = os.path.join(os.getcwd(), "checkpoints", "dcgan_100-346")
+        checkpoint_path = os.path.join(os.getcwd(), "checkpoints", "dcgan_100-356")
 
         datagen = ImageDataGenerator(
-            rotation_range=20,
-            width_shift_range=0.4,
-            height_shift_range=0.4,
-            shear_range=0.2,
-            zoom_range=0.2,
+            rotation_range=0,
+            width_shift_range=0.1,
+            height_shift_range=0.1,
+            shear_range=0.0,
+            zoom_range=0.05,
             horizontal_flip=True,
             fill_mode="nearest"
         )
@@ -45,38 +44,20 @@ class GanTrainer:
         # Remember that images need to reside in another subdirectory under train_data/gan
         self.image_generator = datagen.flow_from_directory(
             os.path.join(os.getcwd(), "train_data", "gan"),
-            batch_size=32,
+            batch_size=self.batch_size,
             class_mode=None,
             target_size=(self.image_size, self.image_size)
         )
 
         self.checkpoint.restore(checkpoint_path)
 
-    def create_train_data(self, image_count):
-        x_train = []
-
-        for i in range(image_count):
-            # Remove this if you don't need to ignore images. If you have images named 000..001..002... you can use the
-            # corresponding IDs here
-            if i in (9, 45):
-                continue
-
-            x = load_img(os.path.join(self.data_path, "real", f"{i}.jpg"))
-            x = img_to_array(x)
-            x = cv2.resize(x, dsize=(self.image_size, self.image_size), interpolation=cv2.INTER_LANCZOS4)
-            x = tf.reshape(x, (1, self.image_size, self.image_size, 3))
-            x /= 255
-            x_train.append(x)
-
-        return tf.reshape(x_train, (image_count - 2, self.image_size, self.image_size, 3))
-
     @tf.function
     def train_step(self):
         noise = tf.random.uniform([self.batch_size, 100])
 
-        for _ in range(3):
-            # TODO: Fix this
-            image_batch = yield self.image_generator
+        for _ in range(self.batch_count):
+            image_batch = next(self.image_generator)
+            image_batch /= 255
 
             with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
                 generated_images = self.generator(noise, training=True)
