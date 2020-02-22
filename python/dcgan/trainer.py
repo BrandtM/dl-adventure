@@ -3,7 +3,10 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import time
-from python.dcgan import DCGAN
+from DCGAN import DCGAN
+
+physical_devices = tf.config.list_physical_devices("GPU")
+tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 
 class GanTrainer:
@@ -24,12 +27,12 @@ class GanTrainer:
         self.discriminator_optimizer = tf.keras.optimizers.Adam(1e-4)
 
         self.checkpoint_dir = os.path.join(os.getcwd(), "checkpoints")
-        self.checkpoint_prefix = os.path.join(self.checkpoint_dir, "dcgan_100")
+        self.checkpoint_prefix = os.path.join(self.checkpoint_dir, "dcgan")
         self.checkpoint = tf.train.Checkpoint(generator_optimizer=self.generator_optimizer,
                                               discriminator_optimizer=self.discriminator_optimizer,
                                               generator=self.generator,
                                               discriminator=self.discriminator)
-        checkpoint_path = os.path.join(os.getcwd(), "checkpoints", "dcgan_100-356")
+        self.checkpoint_manager = tf.train.CheckpointManager(self.checkpoint, directory=self.checkpoint_prefix, max_to_keep=5)
 
         datagen = ImageDataGenerator(
             rotation_range=0,
@@ -49,7 +52,7 @@ class GanTrainer:
             target_size=(self.image_size, self.image_size)
         )
 
-        self.checkpoint.restore(checkpoint_path)
+        self.checkpoint.restore(self.checkpoint_manager.latest_checkpoint)
 
     @tf.function
     def train_step(self):
@@ -83,13 +86,13 @@ class GanTrainer:
             if epoch % 100 == 0:
                 print(f"Time for epoch {epoch} was {end} seconds")
 
-            if epoch % 1000 == 0:
-                save_path = self.checkpoint.save(file_prefix=self.checkpoint_prefix)
+            if epoch % 1000 == 0 and epoch > 1:
+                save_path = self.checkpoint_manager.save()
                 print(f"Saved checkpoint for epoch {epoch} to {save_path}")
 
-        save_path = self.checkpoint.save(file_prefix=self.checkpoint_prefix)
+        save_path = self.checkpoint_manager.save()
         print(f"Saved checkpoint to {save_path}")
-        self.generate_image()
+        # self.generate_image()
 
     def generate_image(self, ):
         predictions = self.generator(self.seed, training=False)
@@ -102,4 +105,9 @@ class GanTrainer:
                 axs[i, j].imshow(tf.math.abs(predictions[cnt, :, :, :]))
                 axs[i, j].axis("off")
                 cnt += 1
-        plt.show()
+        plt.savefig(os.path.join(os.getcwd(), 'cats.png'))
+
+
+if __name__ == "__main__":
+    trainer = GanTrainer(100, 500, 12, 1)
+    trainer.train()
