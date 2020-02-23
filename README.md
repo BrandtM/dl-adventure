@@ -21,6 +21,12 @@ This has only been tested on Arch Linux!
 
 Restart Docker after installing the "Container Toolkit" or your GPU won't be recognized by Docker.
 
+## Cats as a service
+
+Work towards making my DCGAN a CaaS (Cats-as-a-Service) is ongoing but in its early stages.
+For now this doesn't work with Docker nor Docker Compose, you'll have to run flask locally for now.  
+`env FLASK_APP=python/dcgan/generator_server/server.py flask run`
+
 ## Some outputs  
 
 My ~50 images of cats resulted in this after ~280000 epochs:  

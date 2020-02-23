@@ -32,7 +32,9 @@ class GanTrainer:
                                               discriminator_optimizer=self.discriminator_optimizer,
                                               generator=self.generator,
                                               discriminator=self.discriminator)
-        self.checkpoint_manager = tf.train.CheckpointManager(self.checkpoint, directory=self.checkpoint_prefix, max_to_keep=5)
+        self.checkpoint_manager = tf.train.CheckpointManager(self.checkpoint,
+                                                             directory=self.checkpoint_prefix,
+                                                             max_to_keep=5)
 
         datagen = ImageDataGenerator(
             rotation_range=0,

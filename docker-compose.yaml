@@ -1,0 +1,15 @@
+version: '3.7'
+services:
+  python:
+    build: docker/python/dcgan/generator
+    volumes:
+      - ./python/dcgan:/application
+    ports:
+      - 5000:5000
+
+  webserver:
+    image: nginx:latest
+    volumes:
+      - ./docker/python/dcgan/generator/nginx/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 8080:80
