@@ -4,6 +4,5 @@ RUN pip install matplotlib pillow flask gunicorn
 
 WORKDIR /application
 
-# CMD gunicorn -b 0.0.0.0:5001 generator_server.wsgi:main
-ENV FLASK_APP=/application/generator_server/server.py
-CMD flask run --host=0.0.0.0
+ENV PYTHONUNBUFFERED=TRUE
+CMD gunicorn -b 0.0.0.0:5000 server.wsgi:app

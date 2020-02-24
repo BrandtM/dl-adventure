@@ -3,7 +3,7 @@ services:
   python:
     build: docker/python/dcgan/generator
     volumes:
-      - ./python/dcgan:/application
+      - ./python/dcgan:/application/server
     ports:
       - 5000:5000
 

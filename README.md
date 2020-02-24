@@ -24,8 +24,8 @@ Restart Docker after installing the "Container Toolkit" or your GPU won't be rec
 ## Cats as a service
 
 Work towards making my DCGAN a CaaS (Cats-as-a-Service) is ongoing but in its early stages.
-For now this doesn't work with Docker nor Docker Compose, you'll have to run flask locally for now.  
-`env FLASK_APP=python/dcgan/generator_server/server.py flask run`
+Run `docker-compose up` to start a small gunicorn server behind a nginx reverse proxy,
+then visit `localhost:8080`.
 
 ## Some outputs  
 

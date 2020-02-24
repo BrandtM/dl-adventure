@@ -1,13 +1,13 @@
 import os
 import tensorflow as tf
-from . import DCGAN
+from ..DCGAN import DCGAN
 
 
 class Generator:
     def __init__(self):
         self.generator = DCGAN.create_generator_model(100)
 
-        self.checkpoint_dir = os.path.join(os.getcwd(), "python", "dcgan", "checkpoints")
+        self.checkpoint_dir = os.path.join(os.getcwd(), "server", "checkpoints")
         self.checkpoint_prefix = os.path.join(self.checkpoint_dir, "dcgan")
 
         self.checkpoint = tf.train.Checkpoint(generator=self.generator)
